@@ -67,6 +67,29 @@ func (client *Client) UpdateName() bool {
 	return true
 }
 
+func (client *Client) PubilcChat() {
+	//提示用户输入消息
+	var chatMsg string
+	fmt.Println(">>>请输入聊天内容，输入exit退出<<<")
+	fmt.Scanln(&chatMsg)
+
+	for chatMsg != "exit" {
+		//把消息发送给服务器
+		//消息不为空则发送
+		if len(chatMsg) != 0 {
+			sendMsg := chatMsg + "\n"
+			_, err := client.conn.Write([]byte(sendMsg))
+			if err != nil {
+				fmt.Println("client.conn.Write err:", err)
+				break
+			}
+		}
+		chatMsg = ""
+		fmt.Println(">>>请输入聊天内容，输入exit退出<<<")
+		fmt.Scanln(&chatMsg)
+	}
+}
+
 //处理server回应的消息，直接显示到标准输出即可
 func (client *Client) DealResponse() {
 	//一点client.conn有数据，就直接copy到标椎输出，cpoy是永久阻塞监听
@@ -80,7 +103,7 @@ func (client *Client) Run() {
 		//根据不同的模式处理不同的业务
 		switch client.flag {
 		case 1: //公聊模式
-			fmt.Println("公聊模式")
+			client.PubilcChat()
 			break
 		case 2: //私聊模式
 			fmt.Println("私聊模式")
