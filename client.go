@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 )
@@ -27,6 +28,17 @@ func NewClient(serverIp string, serverPort int) *Client {
 	}
 	client.conn = conn
 	return client
+}
+
+var serverIp string
+var serverPort int
+
+// ./client -ip 127.0.0.1 -port 8888		//通过这一个行在执行client可执行程序的时候加上 -ip 和 port 两个参数给对应的：serverIp和serverPort进行赋值
+func init() {
+	flag.StringVar(&serverIp, "ip", "127.0.0.1", "设置服务器的Ip地址（默认是127.0.0.1）")
+	flag.IntVar(&serverPort, "port", 8888, "设置服务器的端口Port（默认是8888）")
+	//命令行解析
+	flag.Parse()
 }
 
 func main() {
