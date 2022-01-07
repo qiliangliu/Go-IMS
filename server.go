@@ -41,26 +41,18 @@ func (this *Server) Handler(conn net.Conn) {
 	// fmt.Println("链接建立成功...")
 
 	//创建一个用户对象
-	user := NewUser(conn)
+	user := NewUser(conn, this)
 
-	//User上线，将用户加到 OnlineMap 中去
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
-
-	//广播当前用户上线
-	this.BroadCast(user, "已上线")
+	//User上线
+	user.Online()
 
 	//接受客户端发送的消息
 	go func() {
 		buf := make([]byte, 4096)
 		for {
 			n, err := conn.Read(buf) //n 为读入数据的长度
-			if n == 0 {              //当客户端退出的时候回返回一个0值
-				this.BroadCast(user, "下线")
-				this.mapLock.Lock()
-				delete(this.OnlineMap, user.Name) //用户下线删除在OnlineMap中的内容
-				this.mapLock.Unlock()
+			if n == 0 {              //当客户端退出的时候回返回一个0值, 表示用下线
+				user.Offline()
 				return
 			}
 
@@ -71,8 +63,8 @@ func (this *Server) Handler(conn net.Conn) {
 
 			//提取用户消息（去除'\n'）
 			msg := string(buf[:n-1])
-			//讲用户的消息进行广播
-			this.BroadCast(user, msg)
+			//将用户的消息进行广播
+			user.DoMessage(msg)
 		}
 	}()
 
