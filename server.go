@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -50,8 +51,33 @@ func (this *Server) Handler(conn net.Conn) {
 	//广播当前用户上线
 	this.BroadCast(user, "已上线")
 
+	//接受客户端发送的消息
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := conn.Read(buf) //n 为读入数据的长度
+			if n == 0 {              //当客户端退出的时候回返回一个0值
+				this.BroadCast(user, "下线")
+				this.mapLock.Lock()
+				delete(this.OnlineMap, user.Name) //用户下线删除在OnlineMap中的内容
+				this.mapLock.Unlock()
+				return
+			}
+
+			if err != nil && err != io.EOF {
+				fmt.Println("Conn Read err:", err)
+				return
+			}
+
+			//提取用户消息（去除'\n'）
+			msg := string(buf[:n-1])
+			//讲用户的消息进行广播
+			this.BroadCast(user, msg)
+		}
+	}()
+
 	//阻塞 handler 结束
-	select {}
+	// select {}
 }
 
 //监听Message管道中的一个gorountine, 一旦这个管道中有消息，我们就把这个消息广播到OnlineMap中所用用户
